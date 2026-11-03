@@ -1,90 +1,314 @@
----
-title: FinCon RAG Assistant
-emoji: 💼
-colorFrom: blue
-colorTo: indigo
-sdk: gradio
-sdk_version: 5.9.1
-app_file: app.py
-pinned: false
----
+# 💼 FinCon & Financial Regulatory Intelligence Assistant
 
-# 💼 FinCon & Financial Regulatory Intelligence Assistant (Milestone 1)
+**An AI-powered Hierarchical Hybrid RAG System for Financial Controlling and Regulatory Compliance**
 
+FinCon RAG is an intelligent document question-answering system designed to help users retrieve and understand financial controlling information, accounting standards, and regulatory requirements.
 
-A production-grade **Hierarchical Hybrid RAG** application built with Python, FastAPI, and Streamlit, designed for **Financial Controlling (FinCon)** and regulatory compliance documentation (IFRS, ASC GAAP, and Corporate Policy manuals).
+The system combines **Query Expansion, Named Entity Recognition, Hybrid Retrieval, Hierarchical Parent-Child Indexing, Cross-Encoder Reranking, and LLM-based Answer Generation** to deliver relevant, context-grounded answers with source attribution.
 
 ---
 
-## 🌟 Architecture Highlights
+## 🌟 Key Features
 
-1. **Hierarchical Parent-Child Indexing**:
-   - Documents are split into large **Parent Chunks** (1,200 chars) preserving full accounting context.
-   - Parent chunks are further split into **Child Chunks** (300 chars) for precise vector & keyword matching.
-   - At query time, top retrieved child chunks automatically expand back to their parent context before LLM generation.
-2. **Hybrid Search (Dense + Sparse)**:
-   - **ChromaDB**: Dense vector embeddings (`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, supporting 50+ languages) for conceptual semantic retrieval.
-   - **Elasticsearch (BM25 Engine)**: Industrial-grade BM25 sparse indexer (configured matching Session 4) for exact financial terms, thresholds, and standard codes (`IFRS 16`, `ASC 606`, `DoA`, `CapEx`) with local `rank_bm25` fallback.
-   - Combined using **Reciprocal Rank Fusion (RRF)**.
-3. **Cross-Encoder Reranking**:
-   - Candidate chunks are re-scored using `BAAI/bge-reranker-base` to eliminate irrelevant false positives and rank by true cross-attention relevance.
-4. **Grounded Prompting & Citation Enforcement**:
-   - Zero-hallucination constraint with mandatory section citations (`[Source: standard.md §clause]`).
-5. **RAG Evaluation Suite**:
-   - Retrieval hit rate and context recall metrics evaluated against a golden benchmark dataset.
+### 1. Hierarchical Parent-Child Indexing
+
+The system uses a hierarchical document structure to balance retrieval precision and contextual completeness.
+
+- Documents are parsed and split into Parent Chunks and Child Chunks.
+- Child Chunks are used for precise retrieval.
+- Retrieved Child Chunks are mapped back to their corresponding Parent Chunks.
+- Parent contexts are passed to the LLM to provide more complete information.
+
+This approach helps avoid losing important context when retrieving small text segments.
+
+### 2. Persistent Vector Database – ChromaDB
+
+- Uses ChromaDB for dense vector storage and semantic retrieval.
+- Uses `PersistentClient` to persist indexed data locally.
+- Allows previously generated embeddings and indexed chunks to be reused instead of rebuilding the vector database every time.
+- Supports collection-based document storage and retrieval.
+
+### 3. Hybrid Search (Dense + Sparse Retrieval)
+
+The retrieval layer combines two complementary approaches:
+
+- **Dense Retrieval (ChromaDB):** Finds semantically related content using vector embeddings.
+- **Sparse Retrieval (BM25):** Finds relevant documents based on exact keywords, financial terminology, and regulatory references.
+
+The results are combined using **Reciprocal Rank Fusion (RRF)** to produce a unified candidate ranking.
+
+### 4. Pre-Retrieval Query Expansion & NER
+
+Before retrieving documents, the system enriches the original query.
+
+- **Named Entity Recognition (NER):** Extracts financial entities using spaCy.
+- **Query Expansion:** Adds relevant financial and domain-specific terminology.
+- The expanded query is used for retrieval, while the original query is retained for reranking.
+
+This helps improve retrieval when users ask questions using different terminology.
+
+### 5. Cross-Encoder Reranking
+
+The retrieved candidate chunks are passed through:
+
+`BAAI/bge-reranker-base`
+
+The Cross-Encoder evaluates the relevance of each candidate against the original query and reorders the results.
+
+This improves the quality of the final retrieved context before generation.
+
+### 6. Grounded Answer Generation
+
+- Uses Groq-powered LLM generation through LangChain's `ChatGroq`.
+- Combines the original question with retrieved Parent Chunk contexts.
+- Uses financial-domain prompts to guide answer generation.
+- Provides source attribution based on retrieved document metadata.
+
+### 7. RAG Evaluation Suite
+
+The project includes a RAG evaluation pipeline based on **RAGAS**.
+
+Evaluation uses a golden benchmark dataset containing **30 questions** and measures:
+
+| Metric | Purpose |
+|---|---|
+| Faithfulness | Measures whether the answer is supported by the retrieved context. |
+| Answer Relevancy | Measures how relevant the generated answer is to the question. |
+| Context Precision | Measures how relevant the retrieved context is. |
+| Context Recall | Measures how much of the required ground-truth information was retrieved. |
+
+The evaluation LLM uses Groq's `openai/gpt-oss-120b` model.
+
+Evaluation results are saved in JSON format for further analysis.
 
 ---
 
-## 🚀 Quickstart Guide
+## 🏗️ System Architecture
 
-### 1. Install Dependencies
+```text
+                    User Question
+                          |
+                          v
+                Query Expansion + NER
+                          |
+                          v
+                 Expanded Query
+                          |
+                          v
+                  Hybrid Retrieval
+                   /           \
+                  /             \
+          Dense Search        BM25 Search
+           ChromaDB             Sparse
+                  \             /
+                   \           /
+                          |
+                          v
+                   RRF Fusion
+                          |
+                          v
+                  Candidate Chunks
+                          |
+                          v
+                 Cross-Encoder Reranker
+                          |
+                          v
+                 Top-K Child Chunks
+                          |
+                          v
+                Parent Context Expansion
+                          |
+                          v
+                   Grounded Prompt
+                          |
+                          v
+                    Groq LLM
+                          |
+                          v
+                 Answer + Sources
+```
+
+---
+
+## 📊 Ingestion Statistics
+
+A successful ingestion run produced the following dataset statistics:
+
+| Component | Count |
+|---|---:|
+| Parsed Documents | 75,029 |
+| Parent Chunks | 89,581 |
+| Child Chunks | 369,503 |
+
+**Storage:**
+- Parent documents are persisted in `data/parent_docstore.json`.
+- Child embeddings are stored in the persistent ChromaDB database.
+- Sparse retrieval data is maintained by the retrieval indexing component.
+
+*These figures represent the observed ingestion run and may change when the source dataset changes.*
+
+---
+
+## 🚀 Installation & Quickstart
+
+### 1. Clone the Repository
+
 ```bash
-cd /home/dell/Desktop/AI-Internship/Milestone1_FinCon_RAG
+git clone https://github.com/AsmaaSalem246/Fincon_Rag.git
+cd Fincon_Rag
+```
+
+### 2. Create a Conda Environment
+
+```bash
+conda create -n fincon-rag python=3.11 -y
+conda activate fincon-rag
+```
+
+### 3. Install Dependencies
+
+```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 2. Ingest Financial Data
-Process all documents in `data/raw/` and build both the ChromaDB vector store and BM25 index:
+### 4. Configure Environment Variables
+
+Create your `.env` file based on `.env.example` and configure the required API credentials and model settings.
+
+**Important:** Never commit your actual `.env` file or expose API keys.
+
+### 5. Ingest Financial Documents
+
+Run the ingestion pipeline from the project root:
+
 ```bash
 python -m src.ingestion.run_ingestion
 ```
 
-### 3. Launch FastAPI Production Backend
-```bash
-uvicorn api.app:app --host 0.0.0.0 --port 8000 --reload
-```
-Interactive API docs available at: `http://localhost:8000/docs`
+This processes the raw documents, generates hierarchical chunks, builds the retrieval indexes, and persists the generated data.
 
-### 4. Launch Streamlit Interactive UI
+**Note:** If the persistent indexes already exist and are compatible with the current configuration, reuse them rather than rebuilding them unnecessarily.
+
+### 6. Run the Streamlit Application
+
 ```bash
 streamlit run ui/streamlit_app.py
 ```
 
-### 5. Run RAG Evaluation Benchmark
+The application provides:
+- Financial question input.
+- Configurable Top-K reranking.
+- Generated answers.
+- Recognized financial entities.
+- Expanded queries.
+- Source attributions.
+- Retrieved Child Chunk inspection.
+- Cross-Encoder and RRF scores.
+- Full Parent Context inspection.
+
+### 7. Launch the FastAPI Backend
+
+```bash
+uvicorn api.app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+API documentation:
+
+`http://localhost:8000/docs`
+
+### 8. Run RAG Evaluation
+
 ```bash
 python -m src.evaluation.evaluate_rag
 ```
 
+The evaluation pipeline uses the golden evaluation dataset and calculates the four RAGAS metrics.
+
+Results are saved to:
+
+```text
+data/ragas_evaluation_results.json
+```
+
 ---
 
-## 📁 Directory Layout
+## 📁 Project Structure
+
 ```text
-Milestone1_FinCon_RAG/
-├── data/
-│   ├── raw/                  # Sample IFRS, ASC 606 & FinCon policies
-│   ├── golden_eval_set.json  # Benchmark Q&A test suite
-│   ├── parent_docstore.json  # Hierarchical parent document store
-│   └── bm25_index.pkl        # BM25 tokenized sparse index
-├── src/
-│   ├── config.py             # App configurations & model params
-│   ├── ingestion/            # Parsing, Parent-Child Chunking, Indexing
-│   ├── retrieval/            # Hybrid search (RRF) & Cross-Encoder Reranker
-│   ├── generation/           # Financial grounding prompts & pipeline
-│   └── evaluation/           # Evaluation metrics script
+Fincon_Rag/
+│
 ├── api/
-│   └── app.py                # FastAPI endpoints (/query, /ingest, /health)
+│   └── app.py
+│
+├── data/
+│   ├── raw/
+│   ├── golden_eval_set.json
+│   ├── parent_docstore.json
+│   └── ragas_evaluation_results.json
+│
+├── src/
+│   ├── config.py
+│   │
+│   ├── ingestion/
+│   │   ├── parser.py
+│   │   ├── hierarchical.py
+│   │   ├── indexer.py
+│   │   ├── load_baai_dataset.py
+│   │   └── run_ingestion.py
+│   │
+│   ├── retrieval/
+│   │   ├── hybrid_search.py
+│   │   ├── query_expansion.py
+│   │   └── reranker.py
+│   │
+│   ├── generation/
+│   │   ├── chain.py
+│   │   └── prompts.py
+│   │
+│   └── evaluation/
+│       └── evaluate_rag.py
+│
 ├── ui/
-│   └── streamlit_app.py      # Streamlit dashboard
+│   └── streamlit_app.py
+│
 ├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+├── .dockerignore
+├── .gitignore
 └── README.md
 ```
+
+---
+
+## 🛠️ Technology Stack
+
+| Category | Technologies |
+|---|---|
+| Language | Python |
+| LLM Integration | Groq, LangChain |
+| Vector Database | ChromaDB |
+| Dense Embeddings | Sentence Transformers |
+| Sparse Retrieval | BM25 |
+| Retrieval Fusion | Reciprocal Rank Fusion (RRF) |
+| Reranking | BAAI/bge-reranker-base |
+| NLP & NER | spaCy |
+| RAG Evaluation | RAGAS |
+| Frontend | Streamlit |
+| Backend | FastAPI |
+| Deployment & Containerization | Docker, Docker Compose |
+
+---
+
+## 🎯 Project Objectives
+
+- Build a scalable financial document retrieval system.
+- Improve retrieval quality through hybrid search and reranking.
+- Preserve document context using hierarchical indexing.
+- Generate grounded answers from financial and regulatory documentation.
+- Evaluate retrieval and generation quality using established RAG metrics.
+- Provide an interactive interface for financial question answering.
+
+---
+
