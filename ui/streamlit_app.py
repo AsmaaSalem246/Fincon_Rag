@@ -46,11 +46,25 @@ st.markdown("""
 }
 
 /* Main text */
+
 .stApp p,
 .stApp li,
 .stApp label,
 .stApp [data-testid="stMarkdownContainer"] {
     color: #334155;
+}
+
+/* ===== STREAMLIT TOP HEADER ===== */
+
+header[data-testid="stHeader"],
+.stAppHeader {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+[data-testid="stToolbar"] {
+    visibility: hidden;
+    height: 0;
 }
 
 /* ===== SIDEBAR ===== */
@@ -74,6 +88,7 @@ section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
 }
 
 /* Sidebar selectbox */
+
 section[data-testid="stSidebar"] [data-baseweb="select"] > div {
     background-color: #FFFFFF;
     border-color: #CBD5E1;
@@ -83,12 +98,13 @@ section[data-testid="stSidebar"] [data-baseweb="select"] * {
     color: #24364B !important;
 }
 
-/* ===== HEADER ===== */
+/* ===== HERO HEADER ===== */
 
 .hero {
     background: linear-gradient(115deg, #173B60, #245B83);
     padding: 30px;
     border-radius: 18px;
+    margin-top: 0;
     margin-bottom: 25px;
     box-shadow: 0 5px 18px rgba(23, 59, 96, 0.10);
 }
@@ -104,6 +120,7 @@ section[data-testid="stSidebar"] [data-baseweb="select"] * {
     color: #DCEAF5 !important;
     font-size: 14px;
     line-height: 1.8;
+    margin-top: 8px;
 }
 
 /* ===== SECTION HEADINGS ===== */
@@ -150,6 +167,7 @@ section[data-testid="stSidebar"] [data-baseweb="select"] * {
     margin: 10px 0 20px 0;
     color: #294D6A !important;
     line-height: 1.8;
+    overflow-wrap: anywhere;
 }
 
 /* ===== SOURCE CARDS ===== */
@@ -186,18 +204,30 @@ section[data-testid="stSidebar"] [data-baseweb="select"] * {
     border-radius: 11px;
     padding: 17px;
     margin: 10px 0;
+    overflow-wrap: anywhere;
 }
 
 .chunk-title {
     color: #245B83 !important;
     font-size: 15px;
     font-weight: 750;
+    margin-bottom: 10px;
 }
 
 .chunk-meta {
     color: #64748B !important;
     font-size: 13px;
     line-height: 1.8;
+}
+
+.chunk-score {
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.9;
+}
+
+.chunk-score b {
+    color: #326F9D !important;
 }
 
 /* ===== INPUTS ===== */
@@ -336,34 +366,23 @@ pipeline = get_pipeline()
 
 
 # --------------------------------------------------
-# 5. HEADER - USING NATIVE STREAMLIT COMPONENTS
+# 5. HEADER
 # --------------------------------------------------
 
-st.markdown("""
+st.html("""
 <div class="hero">
     <div class="hero-title">
         💼 FinCon & Financial Regulatory Intelligence Assistant
     </div>
-</div>
-""", unsafe_allow_html=True)
 
-st.markdown(
-    """
-    <div style="
-        color: #52677D;
-        font-size: 14px;
-        margin-top: -15px;
-        margin-bottom: 25px;
-        line-height: 1.8;
-    ">
+    <div class="hero-subtitle">
         Hybrid RAG Architecture &nbsp; • &nbsp;
         Hierarchical Parent-Child Indexing &nbsp; • &nbsp;
         Cross-Encoder Reranking &nbsp; • &nbsp;
         Citation Enforcement
     </div>
-    """,
-    unsafe_allow_html=True
-)
+</div>
+""")
 
 
 # --------------------------------------------------
@@ -443,10 +462,11 @@ st.sidebar.markdown("""
 # 7. MAIN SEARCH SECTION
 # --------------------------------------------------
 
-st.markdown(
-    '<div class="section-title">🔎 Ask Your Financial Question</div>',
-    unsafe_allow_html=True
-)
+st.html("""
+<div class="section-title">
+    🔎 Ask Your Financial Question
+</div>
+""")
 
 st.caption(
     "Ask a question about financial controlling, accounting, "
@@ -505,21 +525,19 @@ if search_clicked:
 
                 st.markdown("---")
 
-                st.markdown(
-                    '<div class="section-title">'
-                    '📝 Financial Controlling Synthesis'
-                    '</div>',
-                    unsafe_allow_html=True
-                )
+                st.html("""
+                <div class="section-title">
+                    📝 Financial Controlling Synthesis
+                </div>
+                """)
 
                 with st.container(border=True):
 
-                    st.markdown(
-                        '<div class="answer-heading">'
-                        '✨ AI-Generated Financial Analysis'
-                        '</div>',
-                        unsafe_allow_html=True
-                    )
+                    st.html("""
+                    <div class="answer-heading">
+                        ✨ AI-Generated Financial Analysis
+                    </div>
+                    """)
 
                     st.markdown(
                         result.get("answer", "No answer generated.")
@@ -533,12 +551,11 @@ if search_clicked:
 
                 if entities:
 
-                    st.markdown(
-                        '<div class="section-title">'
-                        '🏷️ Recognized Financial Entities'
-                        '</div>',
-                        unsafe_allow_html=True
-                    )
+                    st.html("""
+                    <div class="section-title">
+                        🏷️ Recognized Financial Entities
+                    </div>
+                    """)
 
                     entity_html = ""
 
@@ -558,10 +575,7 @@ if search_clicked:
                             f'</span>'
                         )
 
-                    st.markdown(
-                        entity_html,
-                        unsafe_allow_html=True
-                    )
+                    st.html(entity_html)
 
                 # ======================================
                 # C. QUERY EXPANSION
@@ -571,27 +585,23 @@ if search_clicked:
 
                 if expanded_query and expanded_query != user_query:
 
-                    st.markdown(
-                        '<div class="section-title">'
-                        '🔄 Pre-Retrieval Query Expansion'
-                        '</div>',
-                        unsafe_allow_html=True
-                    )
+                    st.html("""
+                    <div class="section-title">
+                        🔄 Pre-Retrieval Query Expansion
+                    </div>
+                    """)
 
                     safe_expanded_query = html.escape(
                         str(expanded_query)
                     )
 
-                    st.markdown(
-                        f"""
-                        <div class="query-card">
-                            <b>Expanded Query</b>
-                            <br><br>
-                            {safe_expanded_query}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    st.html(f"""
+                    <div class="query-card">
+                        <b>Expanded Query</b>
+                        <br><br>
+                        {safe_expanded_query}
+                    </div>
+                    """)
 
                 # ======================================
                 # D. SOURCE ATTRIBUTIONS
@@ -599,12 +609,11 @@ if search_clicked:
 
                 st.markdown("---")
 
-                st.markdown(
-                    '<div class="section-title">'
-                    '📚 Source Attributions'
-                    '</div>',
-                    unsafe_allow_html=True
-                )
+                st.html("""
+                <div class="section-title">
+                    📚 Source Attributions
+                </div>
+                """)
 
                 sources = result.get("sources", [])
 
@@ -618,19 +627,16 @@ if search_clicked:
 
                         with source_cols[i % len(source_cols)]:
 
-                            st.markdown(
-                                f"""
-                                <div class="source-card">
-                                    <div class="source-number">
-                                        SOURCE {i + 1}
-                                    </div>
-                                    <div class="source-name">
-                                        📄 {safe_source}
-                                    </div>
+                            st.html(f"""
+                            <div class="source-card">
+                                <div class="source-number">
+                                    SOURCE {i + 1}
                                 </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
+                                <div class="source-name">
+                                    📄 {safe_source}
+                                </div>
+                            </div>
+                            """)
 
                 else:
                     st.info("No source attributions were returned.")
@@ -670,48 +676,41 @@ if search_clicked:
                                 str(chunk.get("parent_id", "N/A"))
                             )
 
-                            rerank_score = chunk.get(
-                                "rerank_score", 0.0
+                            rerank_score = float(
+                                chunk.get("rerank_score", 0.0) or 0.0
                             )
 
-                            rrf_score = chunk.get(
-                                "rrf_score", 0.0
+                            rrf_score = float(
+                                chunk.get("rrf_score", 0.0) or 0.0
                             )
 
-                            st.markdown(
-                                f"""
-                                <div class="chunk-card">
+                            st.html(f"""
+                            <div class="chunk-card">
 
-                                    <div class="chunk-title">
-                                        Rank {idx}
-                                    </div>
-
-                                    <div class="chunk-meta">
-                                        <b>Chunk ID:</b> {chunk_id}
-                                        <br>
-                                        <b>Parent ID:</b> {parent_id}
-                                    </div>
-
-                                    <br>
-
-                                    <div>
-                                        <b style="color:#326F9D;">
-                                            Cross-Encoder Rerank Score:
-                                        </b>
-                                        {rerank_score:.4f}
-                                    </div>
-
-                                    <div>
-                                        <b style="color:#326F9D;">
-                                            RRF Score:
-                                        </b>
-                                        {rrf_score:.4f}
-                                    </div>
-
+                                <div class="chunk-title">
+                                    Rank {idx}
                                 </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
+
+                                <div class="chunk-meta">
+                                    <b>Chunk ID:</b> {chunk_id}
+                                    <br>
+                                    <b>Parent ID:</b> {parent_id}
+                                </div>
+
+                                <br>
+
+                                <div class="chunk-score">
+                                    <b>Cross-Encoder Rerank Score:</b>
+                                    {rerank_score:.4f}
+                                </div>
+
+                                <div class="chunk-score">
+                                    <b>RRF Score:</b>
+                                    {rrf_score:.4f}
+                                </div>
+
+                            </div>
+                            """)
 
                             st.text_area(
                                 f"Child Chunk #{idx} Content",
@@ -768,10 +767,10 @@ if search_clicked:
 
 st.markdown("---")
 
-st.markdown("""
+st.html("""
 <div class="footer">
     FinCon & Financial Regulatory Intelligence Assistant
     <br>
     Hybrid Retrieval • Reranking • Grounded Generation
 </div>
-""", unsafe_allow_html=True)
+""")
